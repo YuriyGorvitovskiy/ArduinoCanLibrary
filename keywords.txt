@@ -1,0 +1,56 @@
+#######################################
+# Syntax Coloring Map For Ultrasound
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+CanMessage	KEYWORD1
+CanAccess	KEYWORD1
+CanMCP2515	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+loop	KEYWORD2
+subscribe	KEYWORD2
+stdRequest	KEYWORD2
+stdMessage	KEYWORD2
+extRequest	KEYWORD2
+extMessage	KEYWORD2
+txtMessage	KEYWORD2
+post	KEYWORD2
+send	KEYWORD2
+isSID	KEYWORD2
+isEID	KEYWORD2
+isRTR	KEYWORD2
+getSID	KEYWORD2
+getEID	KEYWORD2
+getDataLength	KEYWORD2
+getData	KEYWORD2
+print	KEYWORD2
+println	KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+Can10kbps	LITERAL1
+Can20kbps	LITERAL1
+Can50kbps	LITERAL1
+Can100kbps	LITERAL1
+Can125kbps	LITERAL1
+Can250kbps	LITERAL1
+Can500kbps  LITERAL1
+Can1Mbps	LITERAL1
+
+CanFilterNone	LITERAL1
+CanFilterOlcb	LITERAL1
+
+CanModeNormal	LITERAL1
+CanModeListen	LITERAL1
+CanModeLoopback	LITERAL1
+
