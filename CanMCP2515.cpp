@@ -26,6 +26,9 @@ CanMCP2515::CanMCP2515(byte spiCSpin, boolean debugToSerial) :
 	rxOverload(false) {
 }	 
 
+void CanMCP2515::begin(CanBitRate rate) {
+	CanAccess::begin(rate);
+}
 
 void CanMCP2515::begin(CanBitRate rate, CanFilter filter, CanMode mode) {
 	rxOverload   = false;
@@ -172,7 +175,7 @@ CanMessage& CanMCP2515::extMessage(long  eid, byte length, byte* data) {
 }
 
 // Sent low priority message
-boolean CanMCP2515::post(CanMessage& message) {
+boolean CanMCP2515::doPost(CanMessage& message) {
 	if (&message == NULL)
 		return false;
 		
@@ -196,7 +199,7 @@ boolean CanMCP2515::post(CanMessage& message) {
 	return true;
 }
 
-boolean CanMCP2515::send(CanMessage& message) {
+boolean CanMCP2515::doSend(CanMessage& message) {
 	if (&message == NULL)
 		return false;
 

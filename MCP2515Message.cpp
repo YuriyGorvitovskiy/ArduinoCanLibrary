@@ -64,8 +64,10 @@ void MCP2515Message::setRTRData(boolean rtr, byte length, byte* data) {
 	length = constrain(length, 0, 8);
 		
 	buffer[MCP2515_TXBDLC_INDEX] = (length & MCP2515_TXBDLC_DLC);
-	if (rtr)
+	if (rtr) {
 		buffer[MCP2515_TXBDLC_INDEX] |= MCP2515_TXBDLC_RTR;
+		buffer[MCP2515_RXBSIDL_INDEX] |= MCP2515_RXBSIDL_SRR; //To fake Consumer who read Local Message
+	}
 		
 	if (length > 0)
 		memcpy(buffer + MCP2515_TXBDM_INDEX, data, length);		

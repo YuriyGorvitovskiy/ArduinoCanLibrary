@@ -14,49 +14,66 @@
 #include "CanUtil.h"
 
 CanAccess::CanAccess() :
-	reciever(NULL),
+	consumer(NULL),
 	forMessage(NULL),
 	forRequest(NULL) {
+}
+
+void CanAccess::addConsumer(CanConsumer* aConsumer) {
+	if (consumer != NULL)
+		consumer->addConsumer(aConsumer);
+	else 
+		consumer = aConsumer;
 }
 
 void CanAccess::loop() {
 	CanMessage* msg = recieve();
 	if (msg == NULL)
 		return;
-		
-	if (msg->isRTR()) {
-		if (reciever != NULL)
-			reciever->onRequest(*msg);
-		if (forRequest != NULL)
-			forRequest(*msg);
-	} else {
-		if (reciever != NULL)
-			reciever->onMessage(*msg);
-		if (forMessage != NULL)
-			forMessage(*msg);
-	}
+
+	handleMessage(*msg, msg->isRTR(), NULL);	
 }
 
-boolean CanAccess::transmit(CanMessage& message, boolean isPost, unsigned long waitMillis) {
-	if (isPost ? post(message) : send(message))
-		return true;
-		
+boolean CanAccess::transmit(CanMessage& message, boolean isPost, unsigned long waitMillis, void* consumer) {
 	if (&message == NULL)
 		return false;
 		
-	if (waitMillis == 0) {
-		while(isPost ? !post(message) : !send(message))
+	if (isPost ? doPost(message) : doSend(message)) {
+		handleMessage(message, message.isRTR(), consumer);
+		return true;
+	}
+	if (waitMillis == CAN_NO_WAIT)
+		return false;
+		
+	if (waitMillis == CAN_FOREVER) {
+		while(isPost ? !doPost(message) : !doSend(message))
 			delay(1); 
+			
+		handleMessage(message, message.isRTR(), consumer);
 		return true;
 	}
 	
 	unsigned long stop = millis() + waitMillis;
 	while(stop > millis()) {
 		delay(1); 
-		if(isPost ? post(message) : send(message))
+		if(isPost ? post(message) : send(message)) {
+			handleMessage(message, message.isRTR(), consumer);
 			return true;
+		}
 	}
 	return false;	
+}
+
+void CanAccess::handleMessage(CanMessage& message, boolean isRTR, void* ignore) {
+	if (ignore != this) {
+		if (!isRTR && forMessage)
+			forMessage(message);
+		else if (isRTR && forRequest)
+			forRequest(message);
+	}
+		
+	if (consumer != NULL)
+		consumer->handleMessage(message, isRTR, (CanConsumer*)ignore);
 }
 
 CanMessage* CanAccess::txtMessage(const char* string) {
@@ -109,14 +126,7 @@ CanMessage* CanAccess::txtMessage(const char* string) {
 		return &stdMessage(sid, length, data);
 	else if (ext)
 		return &extRequest(eid, length, data);
-		
-	return &stdRequest(sid, length, data);
+	else		
+		return &stdRequest(sid, length, data);
 }
 
-boolean CanAccess::post(CanMessage& message, unsigned long waitMillis) {
-	return transmit(message, true, waitMillis);
-}
-
-boolean CanAccess::send(CanMessage& message, unsigned long waitMillis) {
-	return transmit(message, false, waitMillis);
-}

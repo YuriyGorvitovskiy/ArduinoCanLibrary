@@ -18,8 +18,8 @@ void setup() {
     delay(100);
     Serial.begin(115200);
     
-    CAN.begin(Can125kbps, CanFilterNone, CanModeNormal);
-    CAN.subscribe(onMessage, onMessage);
+    CAN.begin(Can125kbps);
+    CAN.subscribe(onMessage);
     
     TXT.begin(Serial, 50);
     TXT.subscribe(onTextInput);

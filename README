@@ -1,0 +1,120 @@
+/**
+ ** This is Public Domain Software.
+ ** 
+ ** The author disclaims copyright to this source code.  
+ ** In place of a legal notice, here is a blessing:
+ **
+ **    May you do good and not evil.
+ **    May you find forgiveness for yourself and forgive others.
+ **    May you share freely, never taking more than you give.
+ **/
+
+Notes:
+	Library has 2 methods to send Messages: post(...) and send(...). The post(...) method is used to transmit regular messages,
+and send(...) method is used to transmit High Priority messages. In case of MCP2515 chip, there are 2 transmitting buffer. So 
+library use 2 of this buffers for posted messages that has priority base on time it was posted (FIFO - First In First Out). 
+The third buffer has highest priority, and any message that was send(...) will end up in this buffer and will be send before 
+any untransmitted post Messages.
+
+	Message could be refused to post(send), because appropriate buffer is full. In this case you can ask to post(send) it until 
+it is successful or it timed out. Be aware that if there is no other CAN boards on the bus, MCP2515 refuse to send messages. 
+In this case first 2(1) messages will be accepted into the buffer, the following one will refuse to post(send).
+
+Usage:
+
+SIMPLE ARDUINO MODE
+1. Create CanAccess implementation (CanMCC2515) as static variable. 
+	Example: 
+ 		CanMCC2515 CAN(10); //10 is a pin used for SlaveSelect in SPI interface
+ 		
+2. Create recieving function(s). The function signature should be: void recieveFunctionName(CanMessage& message) {...}. This 
+method will not receive messages that was posted by CAN.post(...) and CAN.send(...) methods.
+ 	Example: 
+		void onMessage(CanMessage& msg) { 
+			msg.println(Serial); 
+		}
+ 	
+3. From begin() method of Arduino project call CAN.begin(...) and then subscribe your function to recieve Messages.
+	Example: 
+		void begin() {
+			...
+			CAN.begin(Can125kbps); // 125kbps - Can Speed
+			CAN.subscribe(onMessage);
+			...
+		}
+ 		
+4. From loop() method of Arduino project call CAN.loop() method.
+	Example: 
+		void loop() { 
+			CAN.loop();
+			...
+		}
+
+5. To post message to the CAN line you should create new message and then post it. 
+	Example:
+			...
+			byte[2] data = {0x11, 0x22};
+			CAN.post(CAN.stdMessage(0x1234, 2, data));
+			...
+				
+ 
+CONSUMER MODE
+	This mode is used by hight level libraries, that use CAN BUS for communication. CanLibrary allow to use multiple Consumers. In Consumer 
+mode each consumer send and post messages on it's own. Other Consumer will receive this messages in case they are successfully ends up
+appropriate buffers.
+
+	Consumer mode can be intermixed with Simple Arduino mode. In the Simple Arduino mode CanAccess is playing Consumer role, serve callbacks and 
+delegate messages to other Consumers.
+
+
+1. Create consumer class and implement virtual method void onMessage(CanMessage& msg). This method will not receive messages 
+that was posted by post(...) and send(...) of this consumer instance. We would also add some action methods that will post 
+messages to the CAN BUS.
+
+ 	Example: 
+ 		class CanMyConsumer : public CanConsumer {
+ 		protected:
+			void onMessage(CanMessage& msg); 
+		public:
+			void myAction(); 
+ 			...
+		};
+		...
+		void CanMyConsumer::onMessage(CanMessage& msg) { 
+			msg.println(Serial); 
+		}
+		
+		void CanMyConsumer::myAction() { 
+			...
+			byte[2] data = {0x11, 0x22};
+			post(can->stdMessage(0x1234, 2, data)); // can is a protected member variable of the CanConsumer class
+			...
+		}
+
+2. Create CanAccess implementation (CanMCC2515) as static variable. Also create static instance of your consumer class.
+	Example: 
+ 		CanMCC2515    CAN(10); //10 is a pin used for SlaveSelect in SPI interface
+ 		CanMyConsumer Consumer;
+ 		
+3. From begin() method of Arduino project call CAN.begin(...) and then call begin(...) method of your consumer.
+	Example: 
+		void begin() {
+			...
+			CAN.begin(Can125kbps); // 125kbps - Can Speed
+			Consumer.begin(CAN);
+			...
+		}
+ 		
+4. From loop() method of Arduino project call CAN.loop() method.
+	Example: 
+		void loop() { 
+			CAN.loop();
+			...
+		}
+
+5. To make your consumer post message you can call action method of your consumer. 
+	Example:
+			...
+			Consumer.myAction();
+			...
+	

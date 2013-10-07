@@ -34,10 +34,17 @@ private:
 
 	virtual CanMessage* recieve();
 	
+	// Sent low priority message
+	virtual boolean 	doPost(CanMessage& message);
+
+	// Sent high priority message
+	virtual boolean 	doSend(CanMessage& message);
+
 public:	
 						CanMCP2515(byte spiCSpin);
 						CanMCP2515(byte spiCSpin, boolean debugToSerial);
 					
+			void    	begin(CanBitRate rate);
 	virtual	void    	begin(CanBitRate rate, CanFilter filter, CanMode mode);
 	
 	//CanMessage is usable till next call
@@ -46,11 +53,6 @@ public:
 	virtual CanMessage& extRequest(long  eid, byte length, byte* data);
 	virtual CanMessage& extMessage(long  eid, byte length, byte* data);
 	
-	// Sent low priority message
-	virtual boolean 	post(CanMessage& message);
-
-	// Sent high priority message
-	virtual boolean 	send(CanMessage& message);
 };
 
 

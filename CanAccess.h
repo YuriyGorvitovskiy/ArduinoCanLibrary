@@ -15,6 +15,7 @@
 #include <Print.h>
 #include <SPI.h>
 #include "CanMessage.h"
+#include "CanConsumer.h"
 
 enum CanBitRate {
 	Can10kbps,
@@ -38,34 +39,41 @@ enum CanMode {
 	CanModeLoopback
 };
 
+#define CAN_NO_WAIT (0x0L)
+#define CAN_FOREVER (0xFFFFFFFFL)
+
+
 //CanMessage is usable till next call
 typedef void (*OnMessageFuncton)(CanMessage&);
 
-class CanReceiver {
-public:
-
-	//CanMessage is usable till end of the call
-	virtual void onMessage(CanMessage& message) = 0;
-	virtual void onRequest(CanMessage& message) = 0;
-};
-
 class CanAccess {
+friend class CanConsumer;
+
 protected:
-	CanReceiver*  		reciever;
+	
+	CanConsumer*		consumer;
+	
 	OnMessageFuncton	forMessage;
 	OnMessageFuncton	forRequest;
 	 
 protected:
 						CanAccess();
-			boolean 	transmit(CanMessage& message, boolean isPost, unsigned long waitMillis);
+			void 		addConsumer(CanConsumer* consumer);
 
 	virtual CanMessage* recieve() = 0;
 	
+	virtual boolean		doPost(CanMessage& message) = 0;
+	virtual boolean		doSend(CanMessage& message) = 0;
+
+			boolean 	transmit(CanMessage& message, boolean isPost, unsigned long waitMillis, void* consumer);
+			void 		handleMessage(CanMessage& message, boolean isRTR, void* ignore);
+
 public:	
+			void 	 	begin(CanBitRate rate);
 	virtual	void 	 	begin(CanBitRate rate, CanFilter filter, CanMode mode) = 0;
 			void 		loop();
 
-			void 		subscribe(CanReceiver*);
+			void 		subscribe(OnMessageFuncton onMessage);
 			void 		subscribe(OnMessageFuncton onMessage, OnMessageFuncton onRequest);
 			
 	//CanMessage is usable till next call
@@ -79,23 +87,60 @@ public:
 	virtual CanMessage* txtMessage(const char* string);
 	
 	// Sent low priority message
-	virtual boolean 	post(CanMessage& message) = 0;
-			boolean 	post(CanMessage& message, unsigned long waitMillis); // waitMillis == 0 - try to post forever
+			boolean 	post(CanMessage& message); // same as waitMillis = CAN_NO_WAIT
+			boolean 	post(CanMessage& message, unsigned long waitMillis); // waitMillis: timeout(ms), CAN_NO_WAIT, CAN_FOREVER
 
 	// Sent high priority message
-	virtual boolean 	send(CanMessage& message) = 0;
-			boolean 	send(CanMessage& message, unsigned long waitMillis); // waitMillis == 0 - try to send forever
+			boolean 	send(CanMessage& message); // same as waitMillis = CAN_NO_WAIT
+			boolean 	send(CanMessage& message, unsigned long waitMillis); // waitMillis: timeout(ms), CAN_NO_WAIT, CAN_FOREVER
 	
 };
 
-inline void CanAccess::subscribe(CanReceiver* aReceiver) {
-	reciever = aReceiver;
+inline void CanAccess::begin(CanBitRate rate) {
+	begin(rate, CanFilterNone, CanModeNormal);
 }
+
+inline void CanAccess::subscribe(OnMessageFuncton onMessage) {
+	forMessage = onMessage;
+	forRequest = onMessage;
+}
+
 inline void CanAccess::subscribe(OnMessageFuncton onMessage, OnMessageFuncton onRequest) {
 	forMessage = onMessage;
 	forRequest = onRequest;
 }
 
+inline boolean CanAccess::post(CanMessage& message) {
+	return transmit(message, true, CAN_NO_WAIT, this);
+}
+
+inline boolean CanAccess::post(CanMessage& message, unsigned long waitMillis) {
+	return transmit(message, true, waitMillis, this);
+}
+
+inline boolean CanAccess::send(CanMessage& message) {
+	return transmit(message, false, CAN_NO_WAIT, this);
+}
+
+inline boolean CanAccess::send(CanMessage& message, unsigned long waitMillis) {
+	return transmit(message, false, waitMillis, this);
+}
+
+inline boolean CanConsumer::post(CanMessage& message) {
+	return can->transmit(message, true, CAN_NO_WAIT, this);
+}
+
+inline boolean CanConsumer::post(CanMessage& message, unsigned long waitMillis) {
+	return can->transmit(message, true, waitMillis, this);
+}
+
+inline boolean CanConsumer::send(CanMessage& message) {
+	return can->transmit(message, false, CAN_NO_WAIT, this);
+}
+
+inline boolean CanConsumer::send(CanMessage& message, unsigned long waitMillis) {
+	return can->transmit(message, false, waitMillis, this);
+}
 
 
 #endif
