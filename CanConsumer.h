@@ -16,6 +16,9 @@
 #include <SPI.h>
 #include "CanMessage.h"
 
+#define CAN_NO_WAIT (0x0L)
+#define CAN_FOREVER (0xFFFFFFFFL)
+
 class CanAccess;
 
 class CanConsumer {
@@ -36,11 +39,11 @@ protected:
 	virtual void 	onRequest(CanMessage& request); // request handling is optional
 
 			//implementation of this functions is in CanAccess.h	
-			boolean post(CanMessage& message);
-			boolean post(CanMessage& message, unsigned long waitMillis); // waitMillis == 0 - try to post forever
+			boolean post(CanMessage& message); 							 // same as waitMillis = CAN_NO_WAIT
+			boolean post(CanMessage& message, unsigned long waitMillis); // waitMillis: timeout(ms), CAN_NO_WAIT, CAN_FOREVER
 
-			boolean send(CanMessage& message);
-			boolean send(CanMessage& message, unsigned long waitMillis); // waitMillis == 0 - try to post forever
+			boolean send(CanMessage& message); 							 // same as waitMillis = CAN_NO_WAIT
+			boolean send(CanMessage& message, unsigned long waitMillis); // waitMillis: timeout(ms), CAN_NO_WAIT, CAN_FOREVER
 
 public:
 

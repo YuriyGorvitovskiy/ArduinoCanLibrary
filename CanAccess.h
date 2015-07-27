@@ -39,10 +39,6 @@ enum CanMode {
 	CanModeLoopback
 };
 
-#define CAN_NO_WAIT (0x0L)
-#define CAN_FOREVER (0xFFFFFFFFL)
-
-
 //CanMessage is usable till next call
 typedef void (*OnMessageFuncton)(CanMessage&);
 
@@ -87,11 +83,11 @@ public:
 	virtual CanMessage* txtMessage(const char* string);
 	
 	// Sent low priority message
-			boolean 	post(CanMessage& message); // same as waitMillis = CAN_NO_WAIT
+			boolean 	post(CanMessage& message); 							 // same as waitMillis = CAN_NO_WAIT
 			boolean 	post(CanMessage& message, unsigned long waitMillis); // waitMillis: timeout(ms), CAN_NO_WAIT, CAN_FOREVER
 
 	// Sent high priority message
-			boolean 	send(CanMessage& message); // same as waitMillis = CAN_NO_WAIT
+			boolean 	send(CanMessage& message); 							 // same as waitMillis = CAN_NO_WAIT
 			boolean 	send(CanMessage& message, unsigned long waitMillis); // waitMillis: timeout(ms), CAN_NO_WAIT, CAN_FOREVER
 	
 };
